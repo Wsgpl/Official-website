@@ -1,0 +1,68 @@
+# ─── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+
+# ─── Build Outputs ────────────────────────────────────────────────────────────
+dist/
+dist-ssr/
+.output/
+.vinxi/
+.nitro/
+
+# ─── TanStack / Vite Cache ────────────────────────────────────────────────────
+.tanstack/
+*.local
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Environment Variables & Upload Storage ───────────────────────────────────
+.env
+.env.*
+!.env.example
+.dev.vars
+uploads_dev/
+uploads_prod/
+
+# ─── Wrangler / Cloudflare ────────────────────────────────────────────────────
+.wrangler/
+
+# ─── Lovable Platform Config ──────────────────────────────────────────────────
+.lovable/
+
+# ─── Scratch / Dev Scripts (not part of the website) ─────────────────────────
+scratch/
+
+# ─── OS Files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Editor Directories ───────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── TypeScript Build Info ────────────────────────────────────────────────────
+*.tsbuildinfo
+
+# ─── Large Media Files at Root (not website source) ──────────────────────────
+/Recording*.mp4
+/*.mp4
+/*.mov
+/*.avi
+/*.mkv
+
+# ─── Package Manager Lock Conflicts ──────────────────────────────────────────
+# Keep bun.lock (primary), ignore npm lock to avoid dual-manager conflicts
+package-lock.json
