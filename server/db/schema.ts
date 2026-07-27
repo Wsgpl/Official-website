@@ -67,6 +67,8 @@ export const adminUsers = mysqlTable("admin_users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export type AdminUser = typeof adminUsers.$inferSelect;
+
 // 6. Admin Sessions Table
 export const adminSessions = mysqlTable("admin_sessions", {
   id: varchar("id", { length: 36 }).primaryKey(),

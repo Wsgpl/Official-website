@@ -12,6 +12,10 @@ const ALLOWED_MIME_TYPES = new Set([
   "application/sla",
   "application/step",
   "model/step",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "model/obj",
+  "text/plain",
 ]);
 
 const ALLOWED_EXTENSIONS = new Set([
@@ -23,6 +27,9 @@ const ALLOWED_EXTENSIONS = new Set([
   ".stl",
   ".step",
   ".stp",
+  ".doc",
+  ".docx",
+  ".obj",
 ]);
 
 export interface ValidationResult {
@@ -42,7 +49,7 @@ export async function validateUploadedFile(
   if (!ALLOWED_EXTENSIONS.has(ext)) {
     return {
       valid: false,
-      error: `File extension '${ext}' is not permitted. Allowed: PDF, PNG, JPG, ZIP, STL, STEP.`,
+      error: `File extension '${ext}' is not permitted. Allowed: PDF, PNG, JPG, ZIP, STL, STEP, DOC, DOCX, OBJ.`,
     };
   }
 
@@ -98,8 +105,25 @@ function detectMagicMime(buffer: Buffer, ext: string): string | null {
     return "image/jpeg";
   }
 
-  // ZIP (PK..): 50 4B 03 04
+  // DOC (OLE2 compound file header): D0 CF 11 E0 A1 B1 1A E1
+  if (
+    buffer[0] === 0xd0 &&
+    buffer[1] === 0xcf &&
+    buffer[2] === 0x11 &&
+    buffer[3] === 0xe0 &&
+    buffer[4] === 0xa1 &&
+    buffer[5] === 0xb1 &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0xe1
+  ) {
+    return "application/msword";
+  }
+
+  // ZIP (PK..) or DOCX (ZIP container): 50 4B 03 04
   if (buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04) {
+    if (ext === ".docx") {
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    }
     return "application/zip";
   }
 
@@ -109,13 +133,28 @@ function detectMagicMime(buffer: Buffer, ext: string): string | null {
     if (asciiHeader.startsWith("solid")) {
       return "model/stl";
     }
-    // Binary STL has 80-byte header, followed by 4-byte uint32 triangle count
+    // Binary STL has 80-byte header
     return "model/stl";
   }
 
   // STEP file ASCII: ISO-10303-21
   if ((ext === ".step" || ext === ".stp") && asciiHeader.includes("iso-10303-21")) {
     return "model/step";
+  }
+
+  // Wavefront OBJ text format: Validate by checking if first 20 non-empty lines start with valid OBJ directives
+  if (ext === ".obj") {
+    const text = buffer.toString("utf8", 0, Math.min(buffer.length, 512));
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+    const first20 = lines.slice(0, 20);
+    const validObjDirectives = ["v", "vn", "vt", "f", "#", "o", "g", "mtllib", "usemtl"];
+    const hasValidDirective = first20.some((line) => {
+      const firstWord = line.split(/\s+/)[0].toLowerCase();
+      return validObjDirectives.includes(firstWord);
+    });
+    if (hasValidDirective) {
+      return "model/obj";
+    }
   }
 
   return null;

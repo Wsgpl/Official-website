@@ -10,8 +10,17 @@ import { hashPassword } from "../lib/auth.server";
 async function seedAdmin() {
   console.log("🌱 Seeding initial administrator account...");
 
+  const isProd = process.env.NODE_ENV === "production";
   const adminEmail = process.env.ADMIN_EMAIL || "admin@wingspannglobal.com";
-  const defaultPassword = process.env.ADMIN_PASSWORD || "AdminPassword123!";
+  let adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    if (isProd) {
+      console.error("❌ ERROR: ADMIN_PASSWORD environment variable must be set in production mode.");
+      process.exit(1);
+    }
+    adminPassword = "AdminPassword123!";
+  }
 
   try {
     const existing = await db.select().from(adminUsers).where(eq(adminUsers.email, adminEmail)).limit(1);
@@ -21,7 +30,7 @@ async function seedAdmin() {
       process.exit(0);
     }
 
-    const passwordHash = await hashPassword(defaultPassword);
+    const passwordHash = await hashPassword(adminPassword);
     const userId = crypto.randomUUID();
 
     await db.insert(adminUsers).values({
@@ -33,8 +42,10 @@ async function seedAdmin() {
 
     console.log(`✅ Admin account created successfully!`);
     console.log(`   Email: ${adminEmail}`);
-    console.log(`   Password: ${defaultPassword}`);
-    console.log(`⚠️ Change default password immediately after initial login.`);
+    console.log(`   Password: ${adminPassword}`);
+    if (!isProd) {
+      console.log(`⚠️ Change default password immediately after initial login.`);
+    }
     process.exit(0);
   } catch (err) {
     console.error("❌ Failed to seed admin user:", err);

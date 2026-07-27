@@ -5,7 +5,8 @@ export type SecurityEventType =
   | "AUTH_SUCCESS"
   | "AUTH_FAILED"
   | "UNAUTHORIZED_ACCESS"
-  | "FILE_VALIDATION_FAILED";
+  | "FILE_VALIDATION_FAILED"
+  | "DB_WRITE_FAILED";
 
 export interface SecurityEventLog {
   timestamp: string;

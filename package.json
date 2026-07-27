@@ -11,6 +11,8 @@
     "server": "tsx server/index.ts",
     "start": "tsx server/index.ts",
     "db:seed": "tsx server/db/seed-admin.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

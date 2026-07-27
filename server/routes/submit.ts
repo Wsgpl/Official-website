@@ -159,8 +159,17 @@ submitRouter.post("/", submitRateLimitMiddleware, upload.single("file"), async (
       submissionId,
     });
   } catch (dbErr) {
-    console.error("Database write error:", dbErr);
-    // Still return success if email sent or submission received
+    console.error("Database write error on /api/submit:", dbErr);
+    logSecurityEvent("DB_WRITE_FAILED", ip, "/api/submit", { error: String(dbErr), emailSent });
+
+    if (!emailSent) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to process submission. Please try again later.",
+      });
+      return;
+    }
+
     res.json({
       success: true,
       message: "Submission received.",

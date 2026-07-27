@@ -143,7 +143,7 @@ adminRouter.get("/submissions", async (_req: Request, res: Response): Promise<vo
 
 // PATCH /api/admin/submissions/:id
 adminRouter.patch("/submissions/:id", async (req: Request, res: Response): Promise<void> => {
-  const id = req.params.id;
+  const id = req.params.id as string;
   const { status } = req.body;
 
   if (!["new", "read", "archived"].includes(status)) {
@@ -181,7 +181,12 @@ adminRouter.post("/blog", async (req: Request, res: Response): Promise<void> => 
     const id = crypto.randomUUID();
     await db.insert(blogPosts).values({
       id,
-      ...parsed.data,
+      slug: parsed.data.slug,
+      title: parsed.data.title,
+      excerpt: parsed.data.excerpt,
+      body: parsed.data.body,
+      coverImagePath: parsed.data.coverImagePath || null,
+      status: parsed.data.status,
       publishedAt: parsed.data.status === "published" ? new Date() : null,
     });
     res.json({ success: true, id });
@@ -192,7 +197,8 @@ adminRouter.post("/blog", async (req: Request, res: Response): Promise<void> => 
 
 adminRouter.delete("/blog/:id", async (req: Request, res: Response): Promise<void> => {
   try {
-    await db.delete(blogPosts).where(eq(blogPosts.id, req.params.id));
+    const id = req.params.id as string;
+    await db.delete(blogPosts).where(eq(blogPosts.id, id));
     res.json({ success: true, message: "Blog post deleted." });
   } catch (err) {
     res.status(500).json({ success: false, error: "Failed to delete blog post." });
@@ -238,7 +244,8 @@ adminRouter.post("/products", async (req: Request, res: Response): Promise<void>
 
 adminRouter.delete("/products/:id", async (req: Request, res: Response): Promise<void> => {
   try {
-    await db.delete(products).where(eq(products.id, req.params.id));
+    const id = req.params.id as string;
+    await db.delete(products).where(eq(products.id, id));
     res.json({ success: true, message: "Product deleted." });
   } catch (err) {
     res.status(500).json({ success: false, error: "Failed to delete product." });

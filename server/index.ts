@@ -55,6 +55,8 @@ app.use((req, res, next) => {
       next(err);
     }
   });
+});
+
 // Global Production Error Handling Middleware (Prevents stack trace leaks)
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("[SERVER ERROR]", err);

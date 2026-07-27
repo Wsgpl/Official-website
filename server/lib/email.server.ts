@@ -19,6 +19,16 @@ interface EmailPayload {
   } | null;
 }
 
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
 
@@ -36,8 +46,15 @@ export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolea
   const recipient = isDev && devEmail ? devEmail : targetEmail;
   const isDevOverride = Boolean(isDev && devEmail && devEmail !== targetEmail);
 
-  const emailSubject = `[New ${payload.source.toUpperCase()} Lead] ${payload.name} ${
-    payload.subject ? `- ${payload.subject}` : ""
+  const safeName = escapeHtml(payload.name);
+  const safeEmail = escapeHtml(payload.email);
+  const safePhone = escapeHtml(payload.phone) || "N/A";
+  const safeCompany = escapeHtml(payload.company) || "N/A";
+  const safeSubject = escapeHtml(payload.subject) || "N/A";
+  const safeMessage = escapeHtml(payload.message);
+
+  const emailSubject = `[New ${payload.source.toUpperCase()} Lead] ${safeName} ${
+    payload.subject ? `- ${safeSubject}` : ""
   }`;
 
   const htmlBody = `
@@ -52,11 +69,11 @@ export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolea
       }
       <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
         <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Submission ID:</td><td>${payload.submissionId}</td></tr>
-        <tr><td style="padding: 8px 0; font-weight: bold;">Name:</td><td>${payload.name}</td></tr>
-        <tr><td style="padding: 8px 0; font-weight: bold;">Email:</td><td><a href="mailto:${payload.email}">${payload.email}</a></td></tr>
-        <tr><td style="padding: 8px 0; font-weight: bold;">Phone:</td><td>${payload.phone || "N/A"}</td></tr>
-        <tr><td style="padding: 8px 0; font-weight: bold;">Company / Org:</td><td>${payload.company || "N/A"}</td></tr>
-        <tr><td style="padding: 8px 0; font-weight: bold;">Subject / Product:</td><td>${payload.subject || "N/A"}</td></tr>
+        <tr><td style="padding: 8px 0; font-weight: bold;">Name:</td><td>${safeName}</td></tr>
+        <tr><td style="padding: 8px 0; font-weight: bold;">Email:</td><td><a href="mailto:${safeEmail}">${safeEmail}</a></td></tr>
+        <tr><td style="padding: 8px 0; font-weight: bold;">Phone:</td><td>${safePhone}</td></tr>
+        <tr><td style="padding: 8px 0; font-weight: bold;">Company / Org:</td><td>${safeCompany}</td></tr>
+        <tr><td style="padding: 8px 0; font-weight: bold;">Subject / Product:</td><td>${safeSubject}</td></tr>
         <tr><td style="padding: 8px 0; font-weight: bold;">Source Page:</td><td>${payload.source}</td></tr>
       </table>
 
@@ -64,16 +81,16 @@ export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolea
 
       <h4 style="color: #0f172a; margin-bottom: 8px;">Message / Specs:</h4>
       <div style="background: #f8fafc; padding: 12px 16px; border-radius: 6px; white-space: pre-wrap; font-size: 14px; color: #334155;">
-        ${payload.message}
+        ${safeMessage}
       </div>
 
       ${
         payload.fileDetails
           ? `<div style="margin-top: 20px; padding: 12px; background: #e0f2fe; border-radius: 6px; color: #0369a1; font-size: 13px;">
-              📎 <strong>Attached File:</strong> ${payload.fileDetails.originalFilename} (${Math.round(payload.fileDetails.sizeBytes / 1024)} KB)
+              📎 <strong>Attached File:</strong> ${escapeHtml(payload.fileDetails.originalFilename)} (${Math.round(payload.fileDetails.sizeBytes / 1024)} KB)
               ${
                 payload.fileDetails.sizeBytes > 10 * 1024 * 1024
-                  ? `<br/><em>Note: File exceeds 10MB limit for direct attachment. Stored safely at server path: ${payload.fileDetails.storedPath}</em>`
+                  ? `<br/><em>Note: File exceeds 10MB limit for direct attachment. Stored safely at server path: ${escapeHtml(payload.fileDetails.storedPath)}</em>`
                   : ""
               }
             </div>`
