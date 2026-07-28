@@ -1,5 +1,6 @@
 import process from "node:process";
 import fs from "node:fs/promises";
+import nodemailer from "nodemailer";
 import { Resend } from "resend";
 
 interface EmailPayload {
@@ -30,7 +31,7 @@ function escapeHtml(str: string | null | undefined): string {
 }
 
 export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const provider = (process.env.EMAIL_PROVIDER || "auto").toLowerCase();
 
   // Determine production recipient based on source
   let targetEmail = "info@wingspannglobal.com";
@@ -99,16 +100,102 @@ export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolea
     </div>
   `;
 
+  // ─── MODE 1: STRICT RESEND PROVIDER ───
+  if (provider === "resend") {
+    return sendViaResend(payload, recipient, emailSubject, htmlBody);
+  }
+
+  // ─── MODE 2: SMTP PROVIDER (STRICT OR AUTO) ───
+  const smtpHost = process.env.SMTP_HOST || "smtp.office365.com";
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpSecure = process.env.SMTP_SECURE === "true";
+
+  if (!smtpUser || !smtpPass) {
+    console.error("❌ [Email Error] SMTP_USER or SMTP_PASS is missing in environment variables.");
+    if (provider === "smtp") {
+      // In strict 'smtp' mode, fail loudly without fallback
+      return false;
+    }
+    // In 'auto' mode, attempt Resend fallback
+    console.log("ℹ️ [Email Auto Mode] Falling back to Resend API...");
+    return sendViaResend(payload, recipient, emailSubject, htmlBody);
+  }
+
+  try {
+    console.log(`[Email] Dispatching via SMTP (${smtpHost}:${smtpPort}) as ${smtpUser}...`);
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+      tls: {
+        ciphers: "SSLv3",
+        rejectUnauthorized: false,
+      },
+    });
+
+    const attachments = [];
+    if (payload.fileDetails && payload.fileDetails.sizeBytes <= 10 * 1024 * 1024) {
+      attachments.push({
+        filename: payload.fileDetails.originalFilename,
+        path: payload.fileDetails.storedPath,
+      });
+    }
+
+    const info = await transporter.sendMail({
+      from: `"Wingspann Notifications" <${smtpUser}>`,
+      to: recipient,
+      subject: emailSubject,
+      html: htmlBody,
+      attachments,
+    });
+
+    console.log(`✅ [Email SMTP Success] Message delivered (ID: ${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    // Sanitized Error Logging: Log ONLY server response code & text message (NEVER dump config or auth pass)
+    console.error(`❌ [Email SMTP Failure] Code: ${err.code || "UNKNOWN"} | Command: ${err.command || "N/A"}`);
+    if (err.response) {
+      console.error(`   SMTP Server Response: ${err.response}`);
+    } else if (err.message) {
+      console.error(`   SMTP Error Message: ${err.message}`);
+    }
+
+    // In strict 'smtp' mode: fail loudly, DO NOT substitute Resend
+    if (provider === "smtp") {
+      console.error("⛔ EMAIL_PROVIDER=smtp is set to strict mode. Dispatch failed loudly without fallback.");
+      return false;
+    }
+
+    // In 'auto' mode: attempt Resend fallback
+    console.log("ℹ️ [Email Auto Mode] SMTP failed. Falling back to Resend API...");
+    return sendViaResend(payload, recipient, emailSubject, htmlBody);
+  }
+}
+
+// ─── RESEND DISPATCH HELPER ───
+async function sendViaResend(
+  payload: EmailPayload,
+  recipient: string,
+  emailSubject: string,
+  htmlBody: string
+): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === "re_123456789") {
     console.log(`[Email Mock/Dev] Resend key not configured. Would send to ${recipient}:\nSubject: ${emailSubject}`);
     return false;
   }
 
   try {
+    console.log("[Email] Dispatching notification email via Resend API...");
     const resend = new Resend(apiKey);
     const attachments = [];
 
-    // Attach file if exists and under 10MB
     if (payload.fileDetails && payload.fileDetails.sizeBytes <= 10 * 1024 * 1024) {
       try {
         const fileContent = await fs.readFile(payload.fileDetails.storedPath);
@@ -117,7 +204,7 @@ export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolea
           content: fileContent,
         });
       } catch (fileErr) {
-        console.error("Error reading file for attachment:", fileErr);
+        console.error("Error reading file for Resend attachment:", fileErr);
       }
     }
 
@@ -130,13 +217,14 @@ export async function sendSubmissionEmail(payload: EmailPayload): Promise<boolea
     });
 
     if (error) {
-      console.error("Resend delivery error:", error);
+      console.error("❌ Resend delivery error:", error);
       return false;
     }
 
+    console.log(`✅ [Email Resend Success] Delivered to ${recipient}`);
     return true;
-  } catch (err) {
-    console.error("Failed to send email notification:", err);
+  } catch (err: any) {
+    console.error("❌ Failed to send email notification via Resend:", err.message || err);
     return false;
   }
 }
