@@ -44,7 +44,7 @@ function InfrastructureInspectionPage() {
             <p className="text-gray-600 leading-relaxed">
               We deploy multi-sensor drones to inspect critical infrastructure safely and
               efficiently. AI-assisted defect detection identifies cracks, corrosion, thermal
-              anomalies and structural deformations — all without scaffolding, rope access or
+              anomalies and structural deformations all without scaffolding, rope access or
               shutdowns.
             </p>
           </section>

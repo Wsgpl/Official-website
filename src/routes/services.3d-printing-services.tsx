@@ -31,7 +31,7 @@ function PrintingServicesPage() {
             3D Printing Services
           </h1>
           <p className="mt-3 text-white/60 text-lg max-w-xl">
-            Industrial FDM, SLA, SLS and DMLS — CFR-Nylon, ULTEM, PEEK and titanium. STL to part in
+            Industrial FDM, SLA, SLS and DMLS CFR-Nylon, ULTEM, PEEK and titanium. STL to part in
             48 hours.
           </p>
         </div>

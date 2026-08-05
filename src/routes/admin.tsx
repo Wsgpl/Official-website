@@ -427,7 +427,24 @@ export default function AdminPage() {
         {/* ── SUBMISSIONS INBOX TAB ── */}
         {activeTab === "submissions" && (
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white">Incoming Leads & Enquiries</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Incoming Leads & Enquiries</h3>
+              {submissionsList.some((item) => !item.submission.notified) && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  ⚠️ {submissionsList.filter((i) => !i.submission.notified).length} Unnotified Submissions
+                </span>
+              )}
+            </div>
+
+            {submissionsList.some((item) => !item.submission.notified) && (
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center gap-3 text-xs text-amber-300">
+                <ShieldAlert size={18} className="text-amber-400 shrink-0" />
+                <span>
+                  <strong>Email Delivery Alert:</strong> Submissions marked with ❌ Email Delivery Failed did not trigger an outbound email (due to tenant SMTP AUTH restrictions or missing API keys). All lead data is safely stored here in your database.
+                </span>
+              </div>
+            )}
+
             {submissionsList.length === 0 ? (
               <div className="p-8 text-center bg-slate-900 rounded-2xl border border-slate-800 text-slate-400 text-sm">
                 No submissions received yet.
@@ -437,7 +454,9 @@ export default function AdminPage() {
                 {submissionsList.map(({ submission: sub, upload: file }) => (
                   <div
                     key={sub.id}
-                    className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-3"
+                    className={`p-6 rounded-2xl bg-slate-900 border space-y-3 ${
+                      !sub.notified ? "border-rose-500/40 bg-rose-950/10" : "border-slate-800"
+                    }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                       <div className="flex items-center gap-3">
@@ -468,7 +487,16 @@ export default function AdminPage() {
                       <div><b className="text-slate-500 block">Phone:</b> {sub.phone || "N/A"}</div>
                       <div><b className="text-slate-500 block">Company:</b> {sub.company || "N/A"}</div>
                       <div><b className="text-slate-500 block">Subject / Role:</b> {sub.subject || "N/A"}</div>
-                      <div><b className="text-slate-500 block">Email Notified:</b> {sub.notified ? "✅ Sent" : "❌ Failed"}</div>
+                      <div>
+                        <b className="text-slate-500 block">Email Delivery:</b>{" "}
+                        {sub.notified ? (
+                          <span className="text-emerald-400 font-semibold">✅ Sent</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-block mt-0.5">
+                            ❌ Delivery Failed
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="bg-slate-950 p-4 rounded-xl text-xs text-slate-300 whitespace-pre-wrap font-mono">

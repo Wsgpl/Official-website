@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
-
+import "./env";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -19,7 +17,10 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://challenges.cloudflare.com"],
+        scriptSrcElem: ["'self'", "'unsafe-inline'", "https://challenges.cloudflare.com"],
         frameSrc: ["'self'", "https://challenges.cloudflare.com"],
+        childSrc: ["'self'", "https://challenges.cloudflare.com", "blob:"],
+        workerSrc: ["'self'", "https://challenges.cloudflare.com", "blob:"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
@@ -35,6 +36,12 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
+
+// Request Logger Middleware
+app.use((req, _res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl || req.url}`);
+  next();
+});
 
 // API Routes
 app.use("/api/submit", submitRouter);

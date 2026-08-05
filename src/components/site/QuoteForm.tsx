@@ -62,10 +62,17 @@ export function QuoteForm({ compact = false, defaultTopic = "quote", variant = "
         body: payload,
       });
 
-      const resData = await res.json();
+      let resData: any = null;
+      try {
+        const text = await res.text();
+        resData = text ? JSON.parse(text) : null;
+      } catch (jsonErr) {
+        console.error("[QuoteForm JSON Error]", jsonErr);
+      }
 
-      if (!res.ok || !resData.success) {
-        throw new Error(resData.error || "Submission failed");
+      if (!res.ok || !resData?.success) {
+        const serverError = resData?.error;
+        throw new Error(serverError || "Submission failed");
       }
 
       toast.success(resData.message || "Thanks — our engineering team will reach out within 24h.");
@@ -73,7 +80,9 @@ export function QuoteForm({ compact = false, defaultTopic = "quote", variant = "
       setSelectedTopic(defaultTopic);
       setTurnstileToken("");
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong. Please try again.");
+      console.error("[QuoteForm Error]", err);
+      const isUserFriendly = err.message && !err.message.includes("Unexpected") && !err.message.includes("Failed to execute") && !err.message.includes("JSON");
+      toast.error(isUserFriendly ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }

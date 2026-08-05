@@ -44,7 +44,7 @@ function DaaSPage() {
             <p className="text-gray-600 leading-relaxed">
               Outsource your entire aerial operations stack to Wingspann. We bring certified
               Part-107 and CAA pilots, fully insured drone fleets and a cloud-based data delivery
-              portal. Available on a per-project or recurring contract basis — no hardware
+              portal. Available on a per-project or recurring contract basis no hardware
               investment required.
             </p>
           </section>

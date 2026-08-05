@@ -31,7 +31,7 @@ function AgricultureSolutionsPage() {
             Agriculture Solutions
           </h1>
           <p className="mt-3 text-white/60 text-lg max-w-xl">
-            NDVI multispectral analysis, prescription spraying and variable-rate seeding — reducing
+            NDVI multispectral analysis, prescription spraying and variable-rate seeding reducing
             inputs by up to 60%.
           </p>
         </div>

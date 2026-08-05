@@ -9,7 +9,7 @@ export function FloatingActions() {
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.6, type: "spring", stiffness: 200, damping: 18 }}
-        href="https://wa.me/15555555555?text=Hi%20Wingspann%2C%20I%27d%20like%20to%20learn%20more"
+        href="https://wa.me/919175778119?text=Hi%20Wingspann%2C%20I%27d%20like%20to%20learn%20more"
         target="_blank"
         rel="noreferrer noopener"
         aria-label="Chat on WhatsApp"

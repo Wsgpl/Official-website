@@ -10,7 +10,10 @@ interface Props {
 const DEFAULT_TEST_SITEKEY = "1x00000000000000000000AA";
 
 export function TurnstileWidget({ onVerify, onExpire, className }: Props) {
-  const siteKey = (import.meta as any).env?.VITE_TURNSTILE_SITE_KEY || DEFAULT_TEST_SITEKEY;
+  const siteKey =
+    (import.meta as any).env?.VITE_TURNSTILE_SITE_KEY ||
+    (import.meta as any).env?.TURNSTILE_SITE_KEY ||
+    DEFAULT_TEST_SITEKEY;
 
   return (
     <div className={`my-3 flex justify-center ${className || ""}`}>
@@ -18,6 +21,9 @@ export function TurnstileWidget({ onVerify, onExpire, className }: Props) {
         siteKey={siteKey}
         onSuccess={onVerify}
         onExpire={onExpire}
+        onError={(errCode) => {
+          console.warn("[Turnstile Widget Warning] Turnstile challenge error or blocked:", errCode);
+        }}
         options={{
           theme: "auto",
           size: "normal",

@@ -44,7 +44,7 @@ function RapidPrototypingPage() {
             <p className="text-gray-600 leading-relaxed">
               Our cross-functional engineering team collapses the concept-to-validation gap.
               Mechanical design, electronics, embedded firmware and flight-test all happen under one
-              roof — giving you a flying prototype in days, not months.
+              roof giving you a flying prototype in days, not months.
             </p>
           </section>
           <section>

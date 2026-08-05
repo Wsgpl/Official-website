@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
@@ -534,7 +535,7 @@ const services = [
   {
     title: "Agriculture Solutions",
     summary:
-      "NDVI multispectral analysis, precision spraying and variable-rate seeding — reducing inputs by up to 60%.",
+      "NDVI multispectral analysis, precision spraying and variable-rate seeding reducing inputs by up to 60%.",
     details:
       "Maximize your crop yield and reduce waste with our precision agriculture solutions. We provide comprehensive NDVI multispectral analysis to assess crop health down to the square meter. Our intelligent drone systems execute precision spraying and variable-rate seeding missions autonomously, dramatically reducing chemical inputs by up to 60% while boosting overall farm profitability.",
     tag: "Agriculture",
@@ -556,7 +557,7 @@ const services = [
   {
     title: "3D Printing Services",
     summary:
-      "Industrial FDM, SLA, SLS and DMLS — CFR-Nylon, ULTEM, PEEK and titanium. STL to part in 48 hours.",
+      "Industrial FDM, SLA, SLS and DMLS CFR-Nylon, ULTEM, PEEK and titanium. STL to part in 48 hours.",
     details:
       "Accelerate your hardware development with our industrial additive manufacturing services. We offer high-precision FDM, SLA, SLS, and DMLS printing using advanced engineering materials like CFR-Nylon, ULTEM, PEEK, and aerospace-grade titanium. From initial concept STL files to functional, production-ready parts in your hands in under 48 hours.",
     tag: "Additive",
@@ -578,7 +579,7 @@ const services = [
   {
     title: "Custom UAV Development",
     summary:
-      "Bespoke airframes for confined-space, extreme cold, high altitude, or unique payloads — spec to certification.",
+      "Bespoke airframes for confined-space, extreme cold, high altitude, or unique payloads spec to certification.",
     details:
       "When off-the-shelf drones simply won't cut it, we engineer bespoke aerial solutions tailored to your exact mission parameters. We build specialized airframes designed for confined-space navigation, extreme cold-weather operations, high-altitude flights, or entirely unique payload integrations. We manage the entire lifecycle from initial specification to final regulatory certification.",
     tag: "Custom",
@@ -647,15 +648,15 @@ function ServiceCard({ service }: { service: (typeof services)[0] }) {
 
       {/* Modal Popup */}
       {isModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={() => setIsModalOpen(false)}
         >
-          <div 
+          <div
             className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <button 
+            <button
               className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
               onClick={() => setIsModalOpen(false)}
             >
@@ -663,7 +664,7 @@ function ServiceCard({ service }: { service: (typeof services)[0] }) {
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
-            
+
             <div className="flex flex-col md:flex-row gap-8 mb-8 mt-2">
               <div className="w-full md:w-2/5 h-48 md:h-auto rounded-2xl overflow-hidden shrink-0 bg-slate-100 shadow-inner">
                 <img src={service.img} alt={service.title} className="w-full h-full object-cover" />
@@ -728,7 +729,7 @@ function ServicesPage() {
 
   const heroText1 = "End-to-end programs for";
   const heroText2 = "autonomy & manufacturing.";
-  
+
   const words1 = heroText1.split(" ");
   const words2 = heroText2.split(" ");
 
@@ -753,7 +754,7 @@ function ServicesPage() {
 
   return (
     <>
-      <section 
+      <section
         className="relative pt-32 pb-16 md:pt-48 md:pb-24 min-h-[70vh] flex flex-col justify-center bg-cover bg-bottom bg-no-repeat"
         style={{ backgroundImage: `url(${adfBg})` }}
       >
@@ -794,27 +795,29 @@ function ServicesPage() {
 
       {/* Overview & Grid */}
       <section className="py-20 relative overflow-hidden bg-slate-950">
-        {/* Background Image */}
+        {/* Background Image with Subtle Shadow Overlay */}
         <div className="absolute inset-0 z-0">
           <img
             src={servBg}
             alt="Services background"
-            className="w-full h-full object-cover object-right pointer-events-none select-none"
+            className="w-full h-full object-cover object-right pointer-events-none select-none brightness-[0.75] contrast-[1.05]"
           />
+          {/* Subtle shadowy overlay - keeps background image clear & colorful while ensuring text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/40 to-slate-950/70" />
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           {/* Header Banner in circled area */}
           <div className="max-w-4xl mx-auto text-center mb-16">
             <Reveal delay={0.1}>
-              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight mb-5 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight mb-5 drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]">
                 8+ Specialized Industrial Services. <br className="hidden sm:inline" />
                 Turnkey UAV Solutions &amp; Tactical War Rooms.
               </h2>
             </Reveal>
 
             <Reveal delay={0.15}>
-              <p className="text-slate-200 text-base md:text-lg leading-relaxed max-w-3xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+              <p className="text-slate-100 text-base md:text-lg font-medium leading-relaxed max-w-3xl mx-auto drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
                 Wingspann provides an end-to-end aerial intelligence and manufacturing ecosystem. From custom UAV airframe engineering, AI LiDAR mapping, and precision agriculture to additive 3D printing, Drone-as-a-Service, and live multi-feed <strong className="text-white font-bold">War Room Command Centers</strong> — explore our service cards below and scroll down to discover our full War Room setup.
               </p>
             </Reveal>
@@ -848,7 +851,8 @@ function WarRoomSection() {
         <div className="max-w-3xl mb-14">
           <Reveal>
             <div className="flex items-center gap-2 text-sm sm:text-base font-mono font-bold tracking-[0.16em] uppercase text-amber-600 mb-3">
-              <style dangerouslySetInnerHTML={{ __html: `
+              <style dangerouslySetInnerHTML={{
+                __html: `
                 @keyframes jumping-words {
                   0%, 100% {
                     transform: translateY(0);
@@ -872,13 +876,13 @@ function WarRoomSection() {
               ))}
             </div>
             <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 leading-tight">
-              War Room — real-time command centers built around your drone feed.
+              War Room real-time command centers built around your drone feed.
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mt-4 text-gray-600 text-base md:text-lg leading-relaxed">
               We design and set up dedicated command rooms that pull live video from your drone
-              fleet, thermal and CCTV sources onto one video wall — overlaid on GIS maps so
+              fleet, thermal and CCTV sources onto one video wall overlaid on GIS maps so
               incident commanders, police, fire and disaster-response teams see the same live
               picture and act on it together.
             </p>
@@ -908,7 +912,7 @@ function WarRoomSection() {
               <p className="text-gray-600 text-base leading-relaxed">
                 Instead of teams watching separate screens, every drone, camera and map layer
                 streams into a single operational view. Built on the same situational-awareness
-                model used by disaster response agencies — live optical and thermal feeds
+                model used by disaster response agencies live optical and thermal feeds
                 overlaid on GIS maps, hazard zones and unit positions, shared with every
                 responding agency at once.
               </p>
@@ -929,7 +933,7 @@ function WarRoomSection() {
                 desc: "Multiple drone, thermal and CCTV streams pulled onto one video wall in real time.",
                 icon: (
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8 text-indigo-600">
-                    <rect x="4" y="10" width="40" height="24" rx="2"/><path d="M4 34h40M18 40h12"/><circle cx="14" cy="20" r="3"/><circle cx="24" cy="20" r="3"/><circle cx="34" cy="20" r="3"/>
+                    <rect x="4" y="10" width="40" height="24" rx="2" /><path d="M4 34h40M18 40h12" /><circle cx="14" cy="20" r="3" /><circle cx="24" cy="20" r="3" /><circle cx="34" cy="20" r="3" />
                   </svg>
                 ),
               },
@@ -938,7 +942,7 @@ function WarRoomSection() {
                 desc: "Hazard zones, unit positions and flight paths mapped live alongside video feeds.",
                 icon: (
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8 text-indigo-600">
-                    <path d="M24 4 L44 14 L44 30 L24 44 L4 30 L4 14 Z"/><circle cx="24" cy="24" r="6"/>
+                    <path d="M24 4 L44 14 L44 30 L24 44 L4 30 L4 14 Z" /><circle cx="24" cy="24" r="6" />
                   </svg>
                 ),
               },
@@ -947,7 +951,7 @@ function WarRoomSection() {
                 desc: "Police, fire, disaster-management and health teams view the same live picture at once.",
                 icon: (
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8 text-indigo-600">
-                    <circle cx="16" cy="16" r="6"/><circle cx="34" cy="16" r="6"/><circle cx="24" cy="36" r="6"/><path d="M16 22v6M34 22v6M22 34l-4-4M28 34l4-4"/>
+                    <circle cx="16" cy="16" r="6" /><circle cx="34" cy="16" r="6" /><circle cx="24" cy="36" r="6" /><path d="M16 22v6M34 22v6M22 34l-4-4M28 34l4-4" />
                   </svg>
                 ),
               },
@@ -956,7 +960,7 @@ function WarRoomSection() {
                 desc: "Low-light and thermal channels for search-and-rescue and after-dark operations.",
                 icon: (
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8 text-indigo-600">
-                    <circle cx="24" cy="24" r="16"/><path d="M24 16v8l6 4"/>
+                    <circle cx="24" cy="24" r="16" /><path d="M24 16v8l6 4" />
                   </svg>
                 ),
               },
@@ -965,16 +969,16 @@ function WarRoomSection() {
                 desc: "Every feed timestamped and recorded, ready for after-action review or evidence.",
                 icon: (
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8 text-indigo-600">
-                    <rect x="8" y="8" width="32" height="32" rx="2"/><path d="M16 24h16M16 18h10M16 30h8"/>
+                    <rect x="8" y="8" width="32" height="32" rx="2" /><path d="M16 24h16M16 18h10M16 30h8" />
                   </svg>
                 ),
               },
               {
                 title: "Rapid-Deploy Mobile Unit",
-                desc: "A trailer- or vehicle-mounted command post that reaches the field within the hour.",
+                desc: "A trailer or vehicle-mounted command post that reaches the field within the hour.",
                 icon: (
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-8 h-8 text-indigo-600">
-                    <rect x="12" y="6" width="24" height="36" rx="3"/><path d="M20 38h8"/>
+                    <rect x="12" y="6" width="24" height="36" rx="3" /><path d="M20 38h8" />
                   </svg>
                 ),
               },
@@ -1019,7 +1023,7 @@ function WarRoomSection() {
         <Reveal delay={0.35}>
           <div className="pt-10 border-t border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <p className="text-gray-600 text-base max-w-lg font-medium leading-relaxed">
-              Tell us the scale of your operations centre — a fixed installation, a mobile unit, or both — and we'll scope a War Room for your team.
+              Tell us the scale of your operations centre a fixed installation, a mobile unit,or both  and we'll scope a War Room for your team.
             </p>
             <Link
               to="/contact"

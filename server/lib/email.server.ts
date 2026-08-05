@@ -208,8 +208,10 @@ async function sendViaResend(
       }
     }
 
-    const { error } = await resend.emails.send({
-      from: "Wingspann Notifications <notifications@wingspannglobal.com>",
+    const fromAddress = process.env.RESEND_FROM_EMAIL || "notifications@mail.wingspannglobal.com";
+
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
       to: recipient,
       subject: emailSubject,
       html: htmlBody,
@@ -221,7 +223,7 @@ async function sendViaResend(
       return false;
     }
 
-    console.log(`✅ [Email Resend Success] Delivered to ${recipient}`);
+    console.log(`✅ [Email Resend Success] Delivered to ${recipient} (Message ID: ${data?.id})`);
     return true;
   } catch (err: any) {
     console.error("❌ Failed to send email notification via Resend:", err.message || err);

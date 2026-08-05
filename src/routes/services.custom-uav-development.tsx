@@ -31,7 +31,7 @@ function CustomUAVPage() {
             Custom UAV Development
           </h1>
           <p className="mt-3 text-white/60 text-lg max-w-xl">
-            Bespoke airframes for confined-space, extreme cold, high altitude, or unique payloads —
+            Bespoke airframes for confined-space, extreme cold, high altitude, or unique payloads
             from spec to certification.
           </p>
         </div>
@@ -44,7 +44,7 @@ function CustomUAVPage() {
             <p className="text-gray-600 leading-relaxed">
               When off-the-shelf platforms don't meet your mission requirements, we engineer
               purpose-built UAVs from the ground up. Specialized platforms for confined-space
-              inspection, arctic operations, stratospheric altitudes, or unique sensor payloads —
+              inspection, arctic operations, stratospheric altitudes, or unique sensor payloads
               full lifecycle from specification through type-certification support.
             </p>
           </section>

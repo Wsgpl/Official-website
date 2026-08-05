@@ -56,10 +56,6 @@ const productFAQs = [
     answer: "Our drones offer payload capacities ranging from 180g (inspection sensors) up to 25 kg (heavy-lift cargo) with flight times ranging from 30 to 60 minutes per charge, depending on the specific model, payload weight, and battery configuration. For instance, our agricultural spraying drone is optimized for a 16-litre payload."
   },
   {
-    question: "What is the price range of Wingspann drones?",
-    answer: "Pricing depends on the drone type, payload capacity, and level of customization. Our entry-level mapping and inspection platforms start from ₹3.5 Lakh. Contact our sales team for a detailed, customized quote."
-  },
-  {
     question: "Are your drones DGCA certified / compliant with Indian drone regulations?",
     answer: "Yes, our drone platforms are designed and manufactured in full compliance with the DGCA (Directorate General of Civil Aviation) Drone Rules. Our primary models hold or are in the final stages of DGCA Type Certification, making them fully approved for legal commercial operations in India. We also assist our clients with the Digital Sky registration process (UIN/DAN generation)."
   },

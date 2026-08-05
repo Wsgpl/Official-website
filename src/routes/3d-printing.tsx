@@ -366,9 +366,17 @@ function PrintingPage() {
         body: payload,
       });
 
-      const resData = await res.json();
-      if (!res.ok || !resData.success) {
-        throw new Error(resData.error || "Submission failed");
+      let resData: any = null;
+      try {
+        const text = await res.text();
+        resData = text ? JSON.parse(text) : null;
+      } catch (jsonErr) {
+        console.error("[3D Print Form JSON Error]", jsonErr);
+      }
+
+      if (!res.ok || !resData?.success) {
+        const serverError = resData?.error;
+        throw new Error(serverError || "Submission failed");
       }
 
       toast.success(resData.message || "Your 3D printing quote request has been submitted!");
@@ -378,7 +386,9 @@ function PrintingPage() {
       setFile(null);
       setTurnstileToken("");
     } catch (err: any) {
-      toast.error(err.message || "Failed to submit quote request. Please try again.");
+      console.error("[3D Print Form Error]", err);
+      const isUserFriendly = err.message && !err.message.includes("Unexpected") && !err.message.includes("Failed to execute") && !err.message.includes("JSON");
+      toast.error(isUserFriendly ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -521,11 +531,11 @@ function PrintingPage() {
                 </p>
 
                 {/* Image */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 relative overflow-hidden flex items-center justify-center h-80">
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-2 mb-6 relative overflow-hidden flex items-center justify-center h-96 md:h-[400px]">
                   <img
                     src={markTwoImg}
                     alt="Markforged Mark Two"
-                    className="max-h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-contain scale-[1.3] group-hover:scale-[1.38] transition-transform duration-500"
                   />
                 </div>
 
@@ -596,11 +606,11 @@ function PrintingPage() {
                 </p>
 
                 {/* Image */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 relative overflow-hidden flex items-center justify-center h-80">
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-2 mb-6 relative overflow-hidden flex items-center justify-center h-96 md:h-[400px]">
                   <img
                     src={fx10Img}
                     alt="Markforged FX10"
-                    className="max-h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-contain scale-[1.3] group-hover:scale-[1.38] transition-transform duration-500"
                   />
                 </div>
 

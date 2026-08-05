@@ -70,15 +70,25 @@ function RptoPage() {
         body: payload,
       });
 
-      const resData = await res.json();
-      if (!res.ok || !resData.success) {
-        throw new Error(resData.error || "Submission failed");
+      let resData: any = null;
+      try {
+        const text = await res.text();
+        resData = text ? JSON.parse(text) : null;
+      } catch (jsonErr) {
+        console.error("[RPTO Form JSON Error]", jsonErr);
+      }
+
+      if (!res.ok || !resData?.success) {
+        const serverError = resData?.error;
+        throw new Error(serverError || "Submission failed");
       }
 
       setFormSubmitted(true);
       toast.success(resData.message || "Enquiry submitted successfully!");
     } catch (err: any) {
-      toast.error(err.message || "Failed to submit enquiry. Please try again.");
+      console.error("[RPTO Form Error]", err);
+      const isUserFriendly = err.message && !err.message.includes("Unexpected") && !err.message.includes("Failed to execute") && !err.message.includes("JSON");
+      toast.error(isUserFriendly ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }

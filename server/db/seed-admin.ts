@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
-
+import "../env";
 import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "./index";
@@ -11,7 +9,7 @@ async function seedAdmin() {
   console.log("🌱 Seeding initial administrator account...");
 
   const isProd = process.env.NODE_ENV === "production";
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@wingspannglobal.com";
+  const adminEmail = process.env.ADMIN_EMAIL || "info@wingspannglobal.com";
   let adminPassword = process.env.ADMIN_PASSWORD;
 
   if (!adminPassword) {
