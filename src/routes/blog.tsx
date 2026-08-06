@@ -66,61 +66,9 @@ const BLOG_POSTS = [
   },
 ];
 
-export interface BlogPostItem {
-  id: string | number;
-  slug?: string;
-  title: string;
-  excerpt: string;
-  body?: string;
-  category: string;
-  date: string;
-  readTime: string;
-  image: string;
-}
-
 function BlogPage() {
-  const [postsList, setPostsList] = useState<BlogPostItem[]>(BLOG_POSTS);
-  const [loading, setLoading] = useState(true);
-  const [activePost, setActivePost] = useState<BlogPostItem | null>(null);
+  const [activePost, setActivePost] = useState<typeof BLOG_POSTS[0] | null>(null);
   const featuredWrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    async function fetchPosts() {
-      try {
-        const res = await fetch("/api/blog");
-        const data = await res.json();
-        if (res.ok && data.success && Array.isArray(data.posts) && data.posts.length > 0) {
-          const mapped: BlogPostItem[] = data.posts.map((p: any, idx: number) => {
-            const formattedDate = p.publishedAt || p.createdAt
-              ? new Date(p.publishedAt || p.createdAt).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : "Recent";
-            return {
-              id: p.id || p.slug || idx,
-              slug: p.slug,
-              title: p.title,
-              excerpt: p.excerpt,
-              body: p.body,
-              category: p.category || "Publications",
-              date: formattedDate,
-              readTime: "5 min read",
-              image: p.coverImagePath || blogFeaturedImg,
-            };
-          });
-
-          setPostsList(mapped);
-        }
-      } catch (err) {
-        console.error("Error fetching blog posts from API:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPosts();
-  }, []);
 
   useEffect(() => {
     if (activePost) {
@@ -147,8 +95,10 @@ function BlogPage() {
     };
   }, [activePost]);
 
-  const featuredPost = postsList[0] || BLOG_POSTS[0];
-  const gridPosts = postsList.slice(1);
+
+
+  const featuredPost = BLOG_POSTS[0];
+  const gridPosts = BLOG_POSTS.slice(1);
 
   return (
     <>

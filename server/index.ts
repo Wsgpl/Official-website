@@ -6,7 +6,6 @@ import cookieParser from "cookie-parser";
 import path from "node:path";
 import { submitRouter } from "./routes/submit";
 import { adminRouter } from "./routes/admin";
-import { publicRouter } from "./routes/public";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,7 +46,6 @@ app.use((req, _res, next) => {
 // API Routes
 app.use("/api/submit", submitRouter);
 app.use("/api/admin", adminRouter);
-app.use("/api", publicRouter);
 
 // Serve Frontend Static Files from dist/
 const distPath = path.join(process.cwd(), "dist");
