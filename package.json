@@ -12,6 +12,7 @@
     "start": "tsx server/index.ts",
     "db:seed": "tsx server/db/seed-admin.ts",
     "db:seed-blog": "tsx server/db/seed-blog.ts",
+    "db:seed-products": "tsx server/db/seed-products.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "lint": "eslint .",
