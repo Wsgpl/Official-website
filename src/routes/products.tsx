@@ -73,7 +73,74 @@ const productFAQs = [
   }
 ];
 
+import { useState, useEffect } from "react";
+
+export interface ProductItem {
+  id?: string;
+  name: string;
+  tagline: string;
+  flight: string;
+  payload: string;
+  range: string;
+  apps: string[];
+  img: string;
+  slug: string;
+}
+
 function ProductsPage() {
+  const [productList, setProductList] = useState<ProductItem[]>(products);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch("/api/products");
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.products) && data.products.length > 0) {
+          const mapped: ProductItem[] = data.products.map((item: any) => {
+            let imageSrc = productApex;
+            if (item.name.toLowerCase().includes("sentinel")) {
+              imageSrc = productSentinel;
+            } else if (item.name.toLowerCase().includes("third eye")) {
+              imageSrc = productApex;
+            } else if (item.name.toLowerCase().includes("agri")) {
+              imageSrc = productAgri;
+            } else if (item.name.toLowerCase().includes("coming")) {
+              imageSrc = productCaddx;
+            } else if (item.imagePath) {
+              imageSrc = item.imagePath;
+            }
+
+            const productSlug = item.slug
+              ? (item.slug.startsWith("/") ? item.slug : `/products/${item.slug}`)
+              : "/products";
+
+            return {
+              id: item.id,
+              name: item.name,
+              tagline: item.tagline,
+              flight: item.flightTime || item.flight || "30 min",
+              payload: item.payload || "N/A",
+              range: item.range || "N/A",
+              apps: Array.isArray(item.applications) && item.applications.length > 0
+                ? item.applications
+                : ["UAV", "Industrial"],
+              img: imageSrc,
+              slug: productSlug,
+            };
+          });
+
+          setProductList(mapped);
+        }
+      } catch (err) {
+        console.error("Error fetching products from API:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
   return (
     <>
       <style>{`
@@ -140,7 +207,7 @@ function ProductsPage() {
       </section>
 
       {/* ── Products List ── */}
-      {products.map((p, index) => {
+      {productList.map((p, index) => {
         const isEven = index % 2 === 0;
         const bgColor = isEven ? "bg-white" : "bg-gray-50";
         const slideClass = isEven ? "drone-slide-r" : "drone-slide-l";
