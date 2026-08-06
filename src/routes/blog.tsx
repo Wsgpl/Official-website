@@ -67,8 +67,39 @@ const BLOG_POSTS = [
 ];
 
 function BlogPage() {
-  const [activePost, setActivePost] = useState<typeof BLOG_POSTS[0] | null>(null);
+  const [activePost, setActivePost] = useState<any | null>(null);
+  const [postsList, setPostsList] = useState<any[]>([]);
   const featuredWrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function fetchBlogPosts() {
+      try {
+        const res = await fetch("/api/blog");
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.posts) && data.posts.length > 0) {
+          const mapped = data.posts.map((p: any, idx: number) => ({
+            id: p.id || idx + 1,
+            title: p.title,
+            excerpt: p.excerpt,
+            body: p.body,
+            category: p.category || (idx === 0 ? "Our Story" : idx % 2 === 0 ? "Engineering" : "News"),
+            date: p.publishedAt
+              ? new Date(p.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+              : "2026",
+            readTime: "5 min read",
+            image: p.coverImagePath || (idx === 0 ? blogFeaturedImg : idx === 1 ? flightBlogImg : printingHero),
+          }));
+          setPostsList(mapped);
+        } else {
+          setPostsList(BLOG_POSTS);
+        }
+      } catch (err) {
+        console.error("Error fetching blog posts from API:", err);
+        setPostsList(BLOG_POSTS);
+      }
+    }
+    fetchBlogPosts();
+  }, []);
 
   useEffect(() => {
     if (activePost) {
@@ -95,10 +126,9 @@ function BlogPage() {
     };
   }, [activePost]);
 
-
-
-  const featuredPost = BLOG_POSTS[0];
-  const gridPosts = BLOG_POSTS.slice(1);
+  const displayPosts = postsList.length > 0 ? postsList : BLOG_POSTS;
+  const featuredPost = displayPosts[0];
+  const gridPosts = displayPosts.slice(1);
 
   return (
     <>

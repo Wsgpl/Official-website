@@ -85,9 +85,11 @@ export default function AdminPage() {
   const [newBlog, setNewBlog] = useState({ slug: "", title: "", excerpt: "", body: "" });
   const [creatingBlog, setCreatingBlog] = useState(false);
 
-  // Product Form State
-  const [newProduct, setNewProduct] = useState({ slug: "", name: "", tagline: "", flightTime: "", payload: "", range: "" });
-  const [creatingProduct, setCreatingProduct] = useState(false);
+  // Product Editor Modal State
+  const [isProductEditorOpen, setIsProductEditorOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // 1. Check Authentication on Mount
   useEffect(() => {
@@ -255,28 +257,61 @@ export default function AdminPage() {
     }
   }
 
-  // 7. Create Product
-  async function handleCreateProduct(e: React.FormEvent) {
+  // 7. Save Product (Create or Update)
+  async function handleSaveProduct(e: React.FormEvent) {
     e.preventDefault();
-    setCreatingProduct(true);
+    if (!editingProduct) return;
+    setSavingProduct(true);
     try {
-      const res = await fetch("/api/admin/products", {
-        method: "POST",
+      const isEdit = Boolean(editingProduct.id);
+      const url = isEdit ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products";
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProduct),
+        body: JSON.stringify(editingProduct),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success("Product created!");
-        setNewProduct({ slug: "", name: "", tagline: "", flightTime: "", payload: "", range: "" });
+        toast.success(isEdit ? "Product specification updated!" : "New product created!");
+        setIsProductEditorOpen(false);
+        setEditingProduct(null);
         fetchProducts();
       } else {
-        throw new Error(data.error);
+        toast.error(data.error || "Failed to save product.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to create product.");
+      toast.error(err.message || "Failed to save product.");
     } finally {
-      setCreatingProduct(false);
+      setSavingProduct(false);
+    }
+  }
+
+  // File upload helper for product media (hero media, logo, brochure PDF, section media)
+  async function handleUploadPublicFile(file: File): Promise<string | null> {
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/products/upload-media", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.url) {
+        toast.success(`Uploaded '${file.name}' successfully!`);
+        return data.url;
+      } else {
+        toast.error(data.error || "Upload failed security validation.");
+        return null;
+      }
+    } catch (err) {
+      console.error("Public upload error:", err);
+      toast.error("Failed to upload file.");
+      return null;
+    } finally {
+      setUploadingFile(false);
     }
   }
 
@@ -606,110 +641,812 @@ export default function AdminPage() {
 
         {/* ── PRODUCTS TAB ── */}
         {activeTab === "products" && (
-          <div className="grid lg:grid-cols-12 gap-8">
-            {/* Create Form */}
-            <div className="lg:col-span-5 bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Plus size={16} /> Add Product Specification
-              </h3>
-              <form onSubmit={handleCreateProduct} className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-slate-400 mb-1">Product Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newProduct.name}
-                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                    placeholder="e.g. THE THIRD EYE"
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-slate-400 mb-1">Slug</label>
-                  <input
-                    type="text"
-                    required
-                    value={newProduct.slug}
-                    onChange={(e) => setNewProduct({ ...newProduct, slug: e.target.value })}
-                    placeholder="the-third-eye"
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-slate-400 mb-1">Tagline</label>
-                  <input
-                    type="text"
-                    required
-                    value={newProduct.tagline}
-                    onChange={(e) => setNewProduct({ ...newProduct, tagline: e.target.value })}
-                    placeholder="Flagship industrial quadcopter"
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Flight Time</label>
-                    <input
-                      type="text"
-                      value={newProduct.flightTime}
-                      onChange={(e) => setNewProduct({ ...newProduct, flightTime: e.target.value })}
-                      placeholder="40 min"
-                      className="w-full px-2 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Payload</label>
-                    <input
-                      type="text"
-                      value={newProduct.payload}
-                      onChange={(e) => setNewProduct({ ...newProduct, payload: e.target.value })}
-                      placeholder="180 g"
-                      className="w-full px-2 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1">Range</label>
-                    <input
-                      type="text"
-                      value={newProduct.range}
-                      onChange={(e) => setNewProduct({ ...newProduct, range: e.target.value })}
-                      placeholder="4.1 km"
-                      className="w-full px-2 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={creatingProduct}
-                  className="w-full py-2.5 bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-amber-300 cursor-pointer"
-                >
-                  {creatingProduct ? "Saving…" : "Save Product"}
-                </button>
-              </form>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">Product Catalog & Specifications</h3>
+                <p className="text-xs text-slate-400">Manage listing cards, hero banners, feature grids, data sheets, media showcases, and stats bars.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingProduct({
+                    name: "",
+                    slug: "",
+                    tagline: "",
+                    categoryEyebrow: "INDUSTRIAL UAV PLATFORM",
+                    badge: "FLAGSHIP",
+                    themeColor: "purple",
+                    status: "active",
+                    flightTime: "40 min",
+                    payload: "180 g",
+                    range: "4.1 km",
+                    statHighlights: [
+                      { label: "FLIGHT TIME", value: "40 min" },
+                      { label: "PAYLOAD", value: "180 g" },
+                      { label: "RANGE", value: "4.1 km" },
+                    ],
+                    featureGrids: [],
+                    specSheet: [],
+                    mediaSections: [],
+                    statsBar: [],
+                  });
+                  setIsProductEditorOpen(true);
+                }}
+                className="px-4 py-2 bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-amber-300 transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <Plus size={16} /> Create New Product
+              </button>
             </div>
 
-            {/* List */}
-            <div className="lg:col-span-7 space-y-4">
-              <h3 className="text-base font-bold text-white">Active Product Catalog</h3>
+            {/* Existing Product List */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {productsList.map((prod) => (
-                <div key={prod.id} className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-sm text-white">{prod.name}</h4>
-                    <p className="text-xs text-slate-400">{prod.tagline}</p>
-                    <div className="flex gap-4 text-[10px] font-mono text-slate-500">
-                      <span>Flight: {prod.flightTime || "N/A"}</span>
-                      <span>Payload: {prod.payload || "N/A"}</span>
-                      <span>Range: {prod.range || "N/A"}</span>
+                <div key={prod.id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-4 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase bg-amber-400/10 text-amber-400 border border-amber-400/20 rounded-md">
+                        {prod.status}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500">/{prod.slug}</span>
+                    </div>
+                    <h4 className="font-bold text-base text-white">{prod.name}</h4>
+                    <p className="text-xs text-slate-400 line-clamp-2">{prod.tagline}</p>
+                    <div className="grid grid-cols-3 gap-2 pt-2 text-[10px] font-mono text-slate-400 bg-slate-950/60 p-2.5 rounded-lg">
+                      <div><span className="text-slate-500 block">TIME</span>{prod.flightTime || "N/A"}</div>
+                      <div><span className="text-slate-500 block">PAYLOAD</span>{prod.payload || "N/A"}</div>
+                      <div><span className="text-slate-500 block">RANGE</span>{prod.range || "N/A"}</div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDeleteProduct(prod.id)}
-                    className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800/80">
+                    <button
+                      onClick={() => {
+                        setEditingProduct(JSON.parse(JSON.stringify(prod)));
+                        setIsProductEditorOpen(true);
+                      }}
+                      className="px-3 py-1.5 bg-slate-800 text-xs font-semibold text-white rounded-lg hover:bg-slate-700 transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      Edit Product
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(prod.id)}
+                      className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
+                      title="Delete Product"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── PRODUCT EDITOR MODAL DRAWER ── */}
+        {isProductEditorOpen && editingProduct && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex justify-end">
+            <div className="w-full max-w-4xl bg-slate-900 border-l border-slate-800 h-full overflow-y-auto p-6 space-y-8 text-white shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4 sticky top-0 bg-slate-900 z-10 pt-2">
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    {editingProduct.id ? `Edit: ${editingProduct.name}` : "Create New Product"}
+                  </h2>
+                  <p className="text-xs text-slate-400">Configure listing cards, hero assets, feature blocks, spec sheets, showcase sections, and stats.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsProductEditorOpen(false)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-700 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveProduct}
+                    disabled={savingProduct}
+                    className="px-5 py-2 bg-amber-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider rounded-lg hover:bg-amber-300 transition shadow-lg cursor-pointer"
+                  >
+                    {savingProduct ? "Saving..." : "Save Product Specification"}
+                  </button>
+                </div>
+              </div>
+
+              {/* 1. GENERAL & LISTING CARD */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider border-b border-slate-800/80 pb-2">
+                  1. Listing Card & General Info
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Product Name</label>
+                    <input
+                      type="text"
+                      value={editingProduct.name || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                      placeholder="THE THIRD EYE"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Slug</label>
+                    <input
+                      type="text"
+                      value={editingProduct.slug || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, slug: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                      placeholder="the-third-eye"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Tagline / Short Description</label>
+                    <input
+                      type="text"
+                      value={editingProduct.tagline || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, tagline: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                      placeholder="Flagship industrial quadcopter"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Category Eyebrow</label>
+                    <input
+                      type="text"
+                      value={editingProduct.categoryEyebrow || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, categoryEyebrow: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                      placeholder="FLAGSHIP INDUSTRIAL QUADCOPTER"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Badge Tag</label>
+                    <input
+                      type="text"
+                      value={editingProduct.badge || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, badge: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                      placeholder="FLAGSHIP / SURVEY / COMING SOON"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Status</label>
+                    <select
+                      value={editingProduct.status || "active"}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, status: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="active">Active (Visible)</option>
+                      <option value="coming_soon">Coming Soon</option>
+                      <option value="draft">Draft (Hidden)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Theme Accent Color</label>
+                    <select
+                      value={editingProduct.themeColor || "purple"}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, themeColor: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="purple">Purple / Indigo (Third Eye Theme)</option>
+                      <option value="blue">Blue / Cyan (Sentinel Theme)</option>
+                      <option value="cyan">Cyan / Teal (Caddx Theme)</option>
+                      <option value="emerald">Emerald Green</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Listing Card Image URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editingProduct.imagePath || ""}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, imagePath: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                        placeholder="/public-uploads/image.jpg"
+                      />
+                      <label className="px-3 py-2 bg-slate-800 text-xs font-semibold text-white rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+                        Upload
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const url = await handleUploadPublicFile(file);
+                              if (url) setEditingProduct({ ...editingProduct, imagePath: url });
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Listing Stat Badges */}
+                <div className="pt-2 border-t border-slate-800/80">
+                  <label className="block text-[10px] font-mono text-slate-400 uppercase mb-2">Stat Highlights (Shown on Card)</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">Flight Time</span>
+                      <input
+                        type="text"
+                        value={editingProduct.flightTime || ""}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, flightTime: e.target.value })}
+                        className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                        placeholder="40 min"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">Payload</span>
+                      <input
+                        type="text"
+                        value={editingProduct.payload || ""}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, payload: e.target.value })}
+                        className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                        placeholder="180 g"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">Range</span>
+                      <input
+                        type="text"
+                        value={editingProduct.range || ""}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, range: e.target.value })}
+                        className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                        placeholder="4.1 km"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. HERO SECTION */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider border-b border-slate-800/80 pb-2">
+                  2. Detail Page — Hero Banner & Assets
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Full Description Paragraph</label>
+                    <textarea
+                      rows={3}
+                      value={editingProduct.heroDescription || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, heroDescription: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                      placeholder="Detailed overview for the hero section..."
+                    />
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Hero Media URL (Image or Video)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editingProduct.heroMediaUrl || ""}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, heroMediaUrl: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                          placeholder="/public-uploads/hero.mp4"
+                        />
+                        <label className="px-3 py-2 bg-slate-800 text-xs font-semibold text-white rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+                          Upload
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const url = await handleUploadPublicFile(file);
+                                const isVid = file.type.startsWith("video/");
+                                if (url) setEditingProduct({ ...editingProduct, heroMediaUrl: url, heroMediaType: isVid ? "video" : "image" });
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Hero Media Type</label>
+                      <select
+                        value={editingProduct.heroMediaType || "image"}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, heroMediaType: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                      >
+                        <option value="image">Image</option>
+                        <option value="video">Video (Autoplay Loop)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Brochure PDF URL</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editingProduct.brochureUrl || ""}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, brochureUrl: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                          placeholder="/public-uploads/brochure.pdf"
+                        />
+                        <label className="px-3 py-2 bg-slate-800 text-xs font-semibold text-white rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+                          Upload PDF
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const url = await handleUploadPublicFile(file);
+                                if (url) setEditingProduct({ ...editingProduct, brochureUrl: url });
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono text-slate-400 uppercase mb-1">Hero Logo Icon URL (Optional)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editingProduct.heroLogoUrl || ""}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, heroLogoUrl: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white"
+                          placeholder="/public-uploads/logo.png"
+                        />
+                        <label className="px-3 py-2 bg-slate-800 text-xs font-semibold text-white rounded-lg hover:bg-slate-700 cursor-pointer shrink-0">
+                          Upload Logo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const url = await handleUploadPublicFile(file);
+                                if (url) setEditingProduct({ ...editingProduct, heroLogoUrl: url });
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. FEATURE GRIDS */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                    3. Feature Grid Blocks (Repeatable)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fg = editingProduct.featureGrids || [];
+                      setEditingProduct({
+                        ...editingProduct,
+                        featureGrids: [...fg, { eyebrow: "FEATURE HIGHLIGHT", title: "New Feature Block", subtitle: "Description line...", cards: [] }],
+                      });
+                    }}
+                    className="px-3 py-1 bg-slate-800 text-xs font-bold text-white rounded-lg hover:bg-slate-700"
+                  >
+                    + Add Feature Block
+                  </button>
+                </div>
+
+                {(editingProduct.featureGrids || []).map((block: any, bIdx: number) => (
+                  <div key={bIdx} className="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-300">Block #{bIdx + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const fg = [...editingProduct.featureGrids];
+                          fg.splice(bIdx, 1);
+                          setEditingProduct({ ...editingProduct, featureGrids: fg });
+                        }}
+                        className="text-xs text-rose-400 hover:underline"
+                      >
+                        Remove Block
+                      </button>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-2">
+                      <input
+                        type="text"
+                        value={block.eyebrow || ""}
+                        onChange={(e) => {
+                          const fg = [...editingProduct.featureGrids];
+                          fg[bIdx].eyebrow = e.target.value;
+                          setEditingProduct({ ...editingProduct, featureGrids: fg });
+                        }}
+                        placeholder="Eyebrow Line"
+                        className="px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                      <input
+                        type="text"
+                        value={block.title || ""}
+                        onChange={(e) => {
+                          const fg = [...editingProduct.featureGrids];
+                          fg[bIdx].title = e.target.value;
+                          setEditingProduct({ ...editingProduct, featureGrids: fg });
+                        }}
+                        placeholder="Block Title"
+                        className="px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                      <input
+                        type="text"
+                        value={block.subtitle || ""}
+                        onChange={(e) => {
+                          const fg = [...editingProduct.featureGrids];
+                          fg[bIdx].subtitle = e.target.value;
+                          setEditingProduct({ ...editingProduct, featureGrids: fg });
+                        }}
+                        placeholder="Subtitle"
+                        className="px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                    </div>
+
+                    {/* Cards list in block */}
+                    <div className="space-y-2 pt-2 border-t border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">Cards ({block.cards?.length || 0})</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const fg = [...editingProduct.featureGrids];
+                            fg[bIdx].cards = [...(fg[bIdx].cards || []), { icon: "Shield", title: "New Card", description: "Details..." }];
+                            setEditingProduct({ ...editingProduct, featureGrids: fg });
+                          }}
+                          className="text-[10px] text-amber-400 hover:underline"
+                        >
+                          + Add Card
+                        </button>
+                      </div>
+                      {(block.cards || []).map((card: any, cIdx: number) => (
+                        <div key={cIdx} className="grid grid-cols-12 gap-2 items-center bg-slate-950 p-2 rounded">
+                          <input
+                            type="text"
+                            value={card.icon || "Shield"}
+                            onChange={(e) => {
+                              const fg = [...editingProduct.featureGrids];
+                              fg[bIdx].cards[cIdx].icon = e.target.value;
+                              setEditingProduct({ ...editingProduct, featureGrids: fg });
+                            }}
+                            placeholder="Icon (Shield, Zap, Radio, Cpu, Compass)"
+                            className="col-span-3 px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                          />
+                          <input
+                            type="text"
+                            value={card.title || ""}
+                            onChange={(e) => {
+                              const fg = [...editingProduct.featureGrids];
+                              fg[bIdx].cards[cIdx].title = e.target.value;
+                              setEditingProduct({ ...editingProduct, featureGrids: fg });
+                            }}
+                            placeholder="Card Title"
+                            className="col-span-3 px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                          />
+                          <input
+                            type="text"
+                            value={card.description || ""}
+                            onChange={(e) => {
+                              const fg = [...editingProduct.featureGrids];
+                              fg[bIdx].cards[cIdx].description = e.target.value;
+                              setEditingProduct({ ...editingProduct, featureGrids: fg });
+                            }}
+                            placeholder="Description"
+                            className="col-span-5 px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const fg = [...editingProduct.featureGrids];
+                              fg[bIdx].cards.splice(cIdx, 1);
+                              setEditingProduct({ ...editingProduct, featureGrids: fg });
+                            }}
+                            className="col-span-1 text-center text-rose-400 text-xs hover:font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 4. TECHNICAL SPECIFICATION SHEET */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                    4. Technical Specifications Data Sheet
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ss = editingProduct.specSheet || [];
+                      setEditingProduct({
+                        ...editingProduct,
+                        specSheet: [...ss, { categoryName: "Platform & Airframe", rows: [] }],
+                      });
+                    }}
+                    className="px-3 py-1 bg-slate-800 text-xs font-bold text-white rounded-lg hover:bg-slate-700"
+                  >
+                    + Add Spec Category
+                  </button>
+                </div>
+
+                {(editingProduct.specSheet || []).map((cat: any, catIdx: number) => (
+                  <div key={catIdx} className="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <input
+                        type="text"
+                        value={cat.categoryName || ""}
+                        onChange={(e) => {
+                          const ss = [...editingProduct.specSheet];
+                          ss[catIdx].categoryName = e.target.value;
+                          setEditingProduct({ ...editingProduct, specSheet: ss });
+                        }}
+                        placeholder="Category Name (e.g. Flight Performance)"
+                        className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-bold text-amber-300 w-2/3"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const ss = [...editingProduct.specSheet];
+                          ss.splice(catIdx, 1);
+                          setEditingProduct({ ...editingProduct, specSheet: ss });
+                        }}
+                        className="text-xs text-rose-400 hover:underline"
+                      >
+                        Remove Category
+                      </button>
+                    </div>
+
+                    {/* Spec rows */}
+                    <div className="space-y-2 pt-2 border-t border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">Spec Rows ({cat.rows?.length || 0})</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ss = [...editingProduct.specSheet];
+                            ss[catIdx].rows = [...(ss[catIdx].rows || []), { label: "Property", value: "Value" }];
+                            setEditingProduct({ ...editingProduct, specSheet: ss });
+                          }}
+                          className="text-[10px] text-amber-400 hover:underline"
+                        >
+                          + Add Spec Row
+                        </button>
+                      </div>
+                      {(cat.rows || []).map((row: any, rIdx: number) => (
+                        <div key={rIdx} className="grid grid-cols-12 gap-2 items-center bg-slate-950 p-2 rounded">
+                          <input
+                            type="text"
+                            value={row.label || ""}
+                            onChange={(e) => {
+                              const ss = [...editingProduct.specSheet];
+                              ss[catIdx].rows[rIdx].label = e.target.value;
+                              setEditingProduct({ ...editingProduct, specSheet: ss });
+                            }}
+                            placeholder="Label (e.g. Flight Time)"
+                            className="col-span-5 px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                          />
+                          <input
+                            type="text"
+                            value={row.value || ""}
+                            onChange={(e) => {
+                              const ss = [...editingProduct.specSheet];
+                              ss[catIdx].rows[rIdx].value = e.target.value;
+                              setEditingProduct({ ...editingProduct, specSheet: ss });
+                            }}
+                            placeholder="Value (e.g. 40 Minutes)"
+                            className="col-span-6 px-2 py-1 bg-slate-900 border border-slate-800 rounded text-xs text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const ss = [...editingProduct.specSheet];
+                              ss[catIdx].rows.splice(rIdx, 1);
+                              setEditingProduct({ ...editingProduct, specSheet: ss });
+                            }}
+                            className="col-span-1 text-center text-rose-400 text-xs hover:font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 5. MEDIA SHOWCASE SECTIONS */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                    5. Feature / Media Showcase Sections (Repeatable)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ms = editingProduct.mediaSections || [];
+                      setEditingProduct({
+                        ...editingProduct,
+                        mediaSections: [...ms, { title: "New Showcase Section", description: "Section description...", mediaUrls: [] }],
+                      });
+                    }}
+                    className="px-3 py-1 bg-slate-800 text-xs font-bold text-white rounded-lg hover:bg-slate-700"
+                  >
+                    + Add Showcase Section
+                  </button>
+                </div>
+
+                {(editingProduct.mediaSections || []).map((sec: any, sIdx: number) => (
+                  <div key={sIdx} className="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-300">Showcase Section #{sIdx + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const ms = [...editingProduct.mediaSections];
+                          ms.splice(sIdx, 1);
+                          setEditingProduct({ ...editingProduct, mediaSections: ms });
+                        }}
+                        className="text-xs text-rose-400 hover:underline"
+                      >
+                        Remove Section
+                      </button>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={sec.title || ""}
+                        onChange={(e) => {
+                          const ms = [...editingProduct.mediaSections];
+                          ms[sIdx].title = e.target.value;
+                          setEditingProduct({ ...editingProduct, mediaSections: ms });
+                        }}
+                        placeholder="Section Title"
+                        className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                      <input
+                        type="text"
+                        value={sec.description || ""}
+                        onChange={(e) => {
+                          const ms = [...editingProduct.mediaSections];
+                          ms[sIdx].description = e.target.value;
+                          setEditingProduct({ ...editingProduct, mediaSections: ms });
+                        }}
+                        placeholder="Section Description"
+                        className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                    </div>
+
+                    {/* Media Items */}
+                    <div className="space-y-2 pt-2 border-t border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">Attached Media</span>
+                        <label className="text-[10px] text-amber-400 hover:underline cursor-pointer">
+                          + Upload Image/Video
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const url = await handleUploadPublicFile(file);
+                                const isVid = file.type.startsWith("video/");
+                                if (url) {
+                                  const ms = [...editingProduct.mediaSections];
+                                  ms[sIdx].mediaUrls = [...(ms[sIdx].mediaUrls || []), { url, type: isVid ? "video" : "image" }];
+                                  setEditingProduct({ ...editingProduct, mediaSections: ms });
+                                }
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      {(sec.mediaUrls || []).map((med: any, mIdx: number) => (
+                        <div key={mIdx} className="flex items-center justify-between bg-slate-950 p-2 rounded text-xs text-slate-300">
+                          <span className="truncate max-w-md font-mono">{med.url} ({med.type})</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const ms = [...editingProduct.mediaSections];
+                              ms[sIdx].mediaUrls.splice(mIdx, 1);
+                              setEditingProduct({ ...editingProduct, mediaSections: ms });
+                            }}
+                            className="text-rose-400 hover:underline text-xs"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 6. STATS BAR */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                    6. Bottom Stats Bar Items
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sb = editingProduct.statsBar || [];
+                      setEditingProduct({
+                        ...editingProduct,
+                        statsBar: [...sb, { value: "40", unit: "min", label: "Max Flight" }],
+                      });
+                    }}
+                    className="px-3 py-1 bg-slate-800 text-xs font-bold text-white rounded-lg hover:bg-slate-700"
+                  >
+                    + Add Stat Item
+                  </button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3">
+                  {(editingProduct.statsBar || []).map((sb: any, sbIdx: number) => (
+                    <div key={sbIdx} className="grid grid-cols-12 gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-800">
+                      <input
+                        type="text"
+                        value={sb.value || ""}
+                        onChange={(e) => {
+                          const list = [...editingProduct.statsBar];
+                          list[sbIdx].value = e.target.value;
+                          setEditingProduct({ ...editingProduct, statsBar: list });
+                        }}
+                        placeholder="Value (40)"
+                        className="col-span-3 px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                      <input
+                        type="text"
+                        value={sb.unit || ""}
+                        onChange={(e) => {
+                          const list = [...editingProduct.statsBar];
+                          list[sbIdx].unit = e.target.value;
+                          setEditingProduct({ ...editingProduct, statsBar: list });
+                        }}
+                        placeholder="Unit (min)"
+                        className="col-span-3 px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                      <input
+                        type="text"
+                        value={sb.label || ""}
+                        onChange={(e) => {
+                          const list = [...editingProduct.statsBar];
+                          list[sbIdx].label = e.target.value;
+                          setEditingProduct({ ...editingProduct, statsBar: list });
+                        }}
+                        placeholder="Label (Max Endurance)"
+                        className="col-span-5 px-2 py-1 bg-slate-950 border border-slate-800 rounded text-xs text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const list = [...editingProduct.statsBar];
+                          list.splice(sbIdx, 1);
+                          setEditingProduct({ ...editingProduct, statsBar: list });
+                        }}
+                        className="col-span-1 text-center text-rose-400 text-xs hover:font-bold"
+                      >
+                        X
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}

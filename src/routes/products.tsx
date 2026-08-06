@@ -73,7 +73,69 @@ const productFAQs = [
   }
 ];
 
+import { useState, useEffect } from "react";
+
+export interface ProductItem {
+  id?: string;
+  name: string;
+  tagline: string;
+  flight: string;
+  payload: string;
+  range: string;
+  apps: string[];
+  img: string;
+  slug: string;
+  badge?: string;
+  status?: string;
+}
+
 function ProductsPage() {
+  const [productList, setProductList] = useState<ProductItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch("/api/products");
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.products) && data.products.length > 0) {
+          const mapped: ProductItem[] = data.products.map((item: any) => {
+            const productSlug = item.slug
+              ? item.slug.startsWith("/")
+                ? item.slug
+                : `/products/${item.slug}`
+              : "/products";
+
+            return {
+              id: item.id,
+              name: item.name,
+              tagline: item.tagline,
+              flight: item.flightTime || "30 min",
+              payload: item.payload || "N/A",
+              range: item.range || "N/A",
+              apps: Array.isArray(item.applications) && item.applications.length > 0
+                ? item.applications
+                : ["UAV", "Industrial"],
+              img: item.imagePath || productApex,
+              slug: productSlug,
+              badge: item.badge,
+              status: item.status,
+            };
+          });
+          setProductList(mapped);
+        } else {
+          setProductList(products);
+        }
+      } catch (err) {
+        console.error("Error fetching products from API:", err);
+        setProductList(products);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
   return (
     <>
       <style>{`
@@ -140,7 +202,7 @@ function ProductsPage() {
       </section>
 
       {/* ── Products List ── */}
-      {products.map((p, index) => {
+      {(productList.length > 0 ? productList : products).map((p, index) => {
         const isEven = index % 2 === 0;
         const bgColor = isEven ? "bg-white" : "bg-gray-50";
         const slideClass = isEven ? "drone-slide-r" : "drone-slide-l";

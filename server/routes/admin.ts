@@ -15,6 +15,29 @@ import { logSecurityEvent } from "../lib/logger.server";
 
 export const adminRouter = Router();
 
+import multer from "multer";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { validateUploadedFile } from "../lib/file-validation.server";
+
+// Public Uploads Storage Config
+const publicUploadsDirectory = path.join(process.cwd(), process.env.PUBLIC_UPLOAD_DIR || "public_uploads");
+const publicStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, publicUploadsDirectory);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${crypto.randomUUID()}${ext}`;
+    cb(null, uniqueName);
+  },
+});
+
+const publicUpload = multer({
+  storage: publicStorage,
+  limits: { fileSize: 500 * 1024 * 1024 },
+});
+
 // Login Schema
 const loginSchema = z.object({
   email: z.string().trim().email(),
@@ -205,11 +228,48 @@ adminRouter.delete("/blog/:id", async (req: Request, res: Response): Promise<voi
   }
 });
 
+// ─── PUBLIC MEDIA UPLOAD ───
+adminRouter.post(
+  "/products/upload-media",
+  publicUpload.single("file"),
+  async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({ success: false, error: "No media file uploaded." });
+      return;
+    }
+
+    try {
+      const fileVal = await validateUploadedFile(req.file.path, req.file.originalname, req.file.mimetype);
+      if (!fileVal.valid) {
+        await fs.unlink(req.file.path).catch(console.error);
+        res.status(400).json({ success: false, error: fileVal.error || "File failed security validation." });
+        return;
+      }
+
+      const publicUrl = `/public-uploads/${req.file.filename}`;
+      res.json({ success: true, url: publicUrl, filename: req.file.originalname });
+    } catch (err) {
+      console.error("[Public Upload Error]", err);
+      res.status(500).json({ success: false, error: "Failed to process media file upload." });
+    }
+  }
+);
+
 // ─── PRODUCTS CRUD ───
 adminRouter.get("/products", async (_req: Request, res: Response): Promise<void> => {
   try {
     const items = await db.select().from(products).orderBy(desc(products.createdAt));
-    res.json({ success: true, products: items });
+    const formatted = items.map((item) => ({
+      ...item,
+      applications: parseIfNeeded(item.applications) || [],
+      statHighlights: parseIfNeeded(item.statHighlights) || [],
+      heroStats: parseIfNeeded(item.heroStats) || [],
+      featureGrids: parseIfNeeded(item.featureGrids) || [],
+      specSheet: parseIfNeeded(item.specSheet) || [],
+      mediaSections: parseIfNeeded(item.mediaSections) || [],
+      statsBar: parseIfNeeded(item.statsBar) || [],
+    }));
+    res.json({ success: true, products: formatted });
   } catch (err) {
     res.status(500).json({ success: false, error: "Failed to fetch products." });
   }
@@ -229,16 +289,77 @@ adminRouter.post("/products", async (req: Request, res: Response): Promise<void>
       slug: parsed.data.slug,
       name: parsed.data.name,
       tagline: parsed.data.tagline,
+      categoryEyebrow: parsed.data.categoryEyebrow || null,
+      badge: parsed.data.badge || null,
+      themeColor: parsed.data.themeColor || "purple",
       flightTime: parsed.data.flightTime || null,
       payload: parsed.data.payload || null,
       range: parsed.data.range || null,
-      applications: parsed.data.applications ? JSON.stringify(parsed.data.applications) : null,
+      applications: stringifyIfNeeded(parsed.data.applications),
       imagePath: parsed.data.imagePath || null,
       status: parsed.data.status,
+      statHighlights: stringifyIfNeeded(parsed.data.statHighlights),
+      heroLogoUrl: parsed.data.heroLogoUrl || null,
+      heroDescription: parsed.data.heroDescription || null,
+      heroMediaUrl: parsed.data.heroMediaUrl || null,
+      heroMediaType: parsed.data.heroMediaType || "image",
+      brochureUrl: parsed.data.brochureUrl || null,
+      heroStats: stringifyIfNeeded(parsed.data.heroStats),
+      featureGrids: stringifyIfNeeded(parsed.data.featureGrids),
+      specSheet: stringifyIfNeeded(parsed.data.specSheet),
+      mediaSections: stringifyIfNeeded(parsed.data.mediaSections),
+      statsBar: stringifyIfNeeded(parsed.data.statsBar),
     });
     res.json({ success: true, id });
   } catch (err) {
+    console.error("[Admin Product Create Error]", err);
     res.status(500).json({ success: false, error: "Failed to create product." });
+  }
+});
+
+adminRouter.put("/products/:id", async (req: Request, res: Response): Promise<void> => {
+  const id = req.params.id as string;
+  const parsed = productSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ success: false, error: "Invalid product data", details: parsed.error.format() });
+    return;
+  }
+
+  try {
+    await db
+      .update(products)
+      .set({
+        slug: parsed.data.slug,
+        name: parsed.data.name,
+        tagline: parsed.data.tagline,
+        categoryEyebrow: parsed.data.categoryEyebrow || null,
+        badge: parsed.data.badge || null,
+        themeColor: parsed.data.themeColor || "purple",
+        flightTime: parsed.data.flightTime || null,
+        payload: parsed.data.payload || null,
+        range: parsed.data.range || null,
+        applications: stringifyIfNeeded(parsed.data.applications),
+        imagePath: parsed.data.imagePath || null,
+        status: parsed.data.status,
+        statHighlights: stringifyIfNeeded(parsed.data.statHighlights),
+        heroLogoUrl: parsed.data.heroLogoUrl || null,
+        heroDescription: parsed.data.heroDescription || null,
+        heroMediaUrl: parsed.data.heroMediaUrl || null,
+        heroMediaType: parsed.data.heroMediaType || "image",
+        brochureUrl: parsed.data.brochureUrl || null,
+        heroStats: stringifyIfNeeded(parsed.data.heroStats),
+        featureGrids: stringifyIfNeeded(parsed.data.featureGrids),
+        specSheet: stringifyIfNeeded(parsed.data.specSheet),
+        mediaSections: stringifyIfNeeded(parsed.data.mediaSections),
+        statsBar: stringifyIfNeeded(parsed.data.statsBar),
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, id));
+
+    res.json({ success: true, message: "Product updated successfully." });
+  } catch (err) {
+    console.error("[Admin Product Update Error]", err);
+    res.status(500).json({ success: false, error: "Failed to update product." });
   }
 });
 

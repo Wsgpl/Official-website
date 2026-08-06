@@ -6,9 +6,7 @@ import HomePage from "./routes/index";
 import AboutPage from "./routes/about";
 import RptoPage from "./routes/rpto";
 import ProductsPage from "./routes/products";
-import TheThirdEyeProductPage from "./routes/products_.the-third-eye";
-import SentinelSSurveyProductPage from "./routes/products_.sentinel-s-survey";
-import CaddxFpvProductPage from "./routes/products_.caddxfpv-gofilm-20";
+import { ProductDetailPage } from "./routes/product-detail";
 import ServicesPage from "./routes/services";
 import PrintingServicesPage from "./routes/services.3d-printing-services";
 import AgricultureSolutionsPage from "./routes/services.agriculture-solutions";
@@ -55,9 +53,7 @@ export function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="rpto" element={<RptoPage />} />
           <Route path="products" element={<ProductsPage />} />
-          <Route path="products/the-third-eye" element={<TheThirdEyeProductPage />} />
-          <Route path="products/sentinel-s-survey" element={<SentinelSSurveyProductPage />} />
-          <Route path="products/caddxfpv-gofilm-20" element={<Navigate to="/products" replace />} />
+          <Route path="products/:slug" element={<ProductDetailPage />} />
           <Route path="services" element={<ServicesPage />} />
           <Route path="services/3d-printing-services" element={<PrintingServicesPage />} />
           <Route path="services/agriculture-solutions" element={<AgricultureSolutionsPage />} />

@@ -48,12 +48,26 @@ export const products = mysqlTable("products", {
   slug: varchar("slug", { length: 160 }).notNull().unique(),
   name: varchar("name", { length: 160 }).notNull(),
   tagline: varchar("tagline", { length: 255 }).notNull(),
+  categoryEyebrow: varchar("category_eyebrow", { length: 160 }),
+  badge: varchar("badge", { length: 50 }),
+  themeColor: varchar("theme_color", { length: 50 }).default("purple"),
   flightTime: varchar("flight_time", { length: 50 }),
   payload: varchar("payload", { length: 50 }),
   range: varchar("range", { length: 50 }),
   applications: text("applications"), // JSON string array
   imagePath: varchar("image_path", { length: 500 }),
-  status: varchar("status", { length: 20 }).default("active").notNull(),
+  status: varchar("status", { length: 20 }).default("active").notNull(), // active | coming_soon | draft
+  statHighlights: text("stat_highlights"), // JSON array [{ label, value }]
+  heroLogoUrl: varchar("hero_logo_url", { length: 500 }),
+  heroDescription: text("hero_description"),
+  heroMediaUrl: varchar("hero_media_url", { length: 500 }),
+  heroMediaType: varchar("hero_media_type", { length: 20 }).default("image"), // image | video
+  brochureUrl: varchar("brochure_url", { length: 500 }),
+  heroStats: text("hero_stats"), // JSON array [{ label, value }]
+  featureGrids: text("feature_grids"), // JSON array of FeatureGrid blocks
+  specSheet: text("spec_sheet"), // JSON array of SpecCategory blocks
+  mediaSections: text("media_sections"), // JSON array of MediaSection blocks
+  statsBar: text("stats_bar"), // JSON array of StatBar items [{ value, unit, label }]
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

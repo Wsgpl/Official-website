@@ -4,8 +4,10 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import path from "node:path";
+import fs from "node:fs";
 import { submitRouter } from "./routes/submit";
 import { adminRouter } from "./routes/admin";
+import { publicRouter } from "./routes/public";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,9 +45,17 @@ app.use((req, _res, next) => {
   next();
 });
 
+// Public Media Uploads Directory (images, videos, brochures)
+const publicUploadsDir = path.join(process.cwd(), process.env.PUBLIC_UPLOAD_DIR || "public_uploads");
+if (!fs.existsSync(publicUploadsDir)) {
+  fs.mkdirSync(publicUploadsDir, { recursive: true });
+}
+app.use("/public-uploads", express.static(publicUploadsDir));
+
 // API Routes
 app.use("/api/submit", submitRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api", publicRouter);
 
 // Serve Frontend Static Files from dist/
 const distPath = path.join(process.cwd(), "dist");
@@ -53,8 +63,8 @@ app.use(express.static(distPath));
 
 // React Router SPA Catch-All Fallback (returns index.html for non-API routes)
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api/")) {
-    res.status(404).json({ success: false, error: "API endpoint not found" });
+  if (req.path.startsWith("/api/") || req.path.startsWith("/public-uploads/")) {
+    res.status(404).json({ success: false, error: "Resource not found" });
     return;
   }
   res.sendFile(path.join(distPath, "index.html"), (err) => {

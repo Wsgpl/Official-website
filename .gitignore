@@ -28,6 +28,8 @@ lerna-debug.log*
 .dev.vars
 uploads_dev/
 uploads_prod/
+public_uploads/*.mp4
+public_uploads/*.mov
 
 # ─── Wrangler / Cloudflare ────────────────────────────────────────────────────
 .wrangler/
